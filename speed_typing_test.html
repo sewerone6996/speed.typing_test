@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typing Speed Test Pro</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;600;800&display=swap');
+
+        :root {
+            --bg-start: #0f172a;
+            --bg-end: #1e1b4b;
+            --main: #e2b714;
+            --text: #f8fafc;
+            --sub: #64748b;
+            --error: #ef4444;
+            --panel-bg: rgba(30, 41, 59, 0.6);
+            --panel-border: rgba(255, 255, 255, 0.1);
+            --font: 'JetBrains Mono', monospace;
+            --ui-font: 'Inter', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-start);
+            color: var(--text);
+            font-family: var(--ui-font);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* --- ФОН (СЮДА ВСТАВЬ СВОЮ ССЫЛКУ) --- */
+        .bg-image {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            /* Вставь свою ссылку между кавычками ниже: */
+            background-image: url('https://i.imgur.com/tY6yVq3.jpeg'); 
+            background-size: cover;
+            background-position: center;
+            filter: brightness(0.2) blur(5px); /* Сильно затемняем и размываем */
+            z-index: -2;
+        }
+
+        /* Легкий градиент поверх картинки для контраста */
+        .bg-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.7) 0%, rgba(30, 27, 75, 0.7) 100%);
+            z-index: -1;
+        }
+
+        /* Анимация пульсации */
+        .glow-bg {
+            position: absolute;
+            width: 50vw; height: 50vw;
+            background: radial-gradient(circle, rgba(226, 183, 20, 0.1) 0%, transparent 60%);
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            animation: pulseGlow 6s infinite alternate;
+            z-index: -1;
+        }
+
+        @keyframes pulseGlow {
+            0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.5; }
+            100% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+        }
+
+        /* --- БЕГУЩИЙ РИК (СПРАЙТ) --- */
+        .rick-runner {
+            position: absolute;
+            bottom: 15%;
+            left: -150px;
+            width: 100px; height: 100px;
+            opacity: 0.3; 
+            animation: runAcross 15s linear infinite, wobble 0.4s ease-in-out infinite alternate;
+            z-index: -1;
+        }
+
+        @keyframes runAcross {
+            0% { left: -150px; transform: scaleX(1); }
+            49.9% { transform: scaleX(1); }
+            50% { left: 100vw; transform: scaleX(-1); }
+            99.9% { transform: scaleX(-1); }
+            100% { left: -150px; transform: scaleX(1); }
+        }
+
+        @keyframes wobble {
+            0% { bottom: 15%; transform: rotate(-10deg); }
+            100% { bottom: 17%; transform: rotate(10deg); }
+        }
+
+        /* --- ШАПКА --- */
+        .header {
+            width: 100%; max-width: 900px;
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 30px; z-index: 10;
+        }
+
+        .logo { font-size: 24px; font-weight: 800; display: flex; align-items: center; gap: 10px; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+        .logo span { color: var(--main); }
+
+        .settings {
+            display: flex; gap: 15px;
+            background: rgba(0, 0, 0, 0.5); padding: 10px 20px;
+            border-radius: 12px; border: 1px solid var(--panel-border);
+            font-family: var(--font); font-size: 14px; color: var(--sub);
+            backdrop-filter: blur(10px);
+        }
+
+        .setting-btn { cursor: pointer; transition: 0.2s; user-select: none; }
+        .setting-btn:hover { color: var(--text); }
+        .setting-btn.active { color: var(--main); font-weight: bold; }
+
+        /* --- ЗОНА ПЕЧАТИ --- */
+        .typing-area { width: 100%; max-width: 900px; position: relative; z-index: 10; }
+
+        .stats-bar {
+            display: flex; gap: 30px; margin-bottom: 20px;
+            font-family: var(--font); font-size: 32px; color: var(--main);
+            height: 40px; opacity: 0; transition: 0.3s;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+        .stats-bar.show { opacity: 1; }
+        .stat-item { display: flex; flex-direction: column; }
+        .stat-label { font-size: 12px; color: var(--sub); font-family: var(--ui-font); text-transform: uppercase; letter-spacing: 1px; text-shadow: none; }
+
+        .timer-display {
+            position: absolute; top: -40px; right: 0;
+            font-family: var(--font); font-size: 24px; color: var(--main);
+            opacity: 0; transition: 0.3s;
+        }
+        .timer-display.show { opacity: 1; }
+
+        .text-wrapper {
+            height: 180px; overflow: hidden; position: relative;
+            background: rgba(15, 23, 42, 0.85); 
+            padding: 20px; border-radius: 12px; border: 1px solid var(--panel-border);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); backdrop-filter: blur(10px);
+        }
+
+        .text-display {
+            font-family: var(--font); font-size: 28px; line-height: 1.6;
+            letter-spacing: 1px; color: var(--sub); user-select: none; outline: none;
+        }
+
+        .word { display: inline-block; margin-right: 12px; position: relative; margin-bottom: 5px; }
+
+        .char { position: relative; transition: color 0.1s; }
+        .char.correct { color: var(--text); }
+        .char.incorrect { color: var(--error); text-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
+        .char.incorrect::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px; background: var(--error); }
+        
+        .char.current { color: var(--main); }
+        .char.current::before { 
+            content: ''; position: absolute; left: -1px; top: 0; width: 2px; height: 100%; 
+            background: var(--main); animation: blink 1s infinite; 
+        }
+        
+        .char.space.current::before { left: 50%; }
+
+        @keyframes blink { 50% { opacity: 0; } }
+
+        #hidden-input {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0; cursor: text; z-index: 10;
+        }
+
+        /* --- РЕЗУЛЬТАТЫ --- */
+        .results-screen { display: none; flex-direction: column; align-items: center; animation: fadeIn 0.5s; }
+        .results-screen.show { display: flex; }
+        .results-title { font-size: 24px; color: var(--sub); margin-bottom: 20px; font-weight: 600; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+
+        .big-stats { display: flex; gap: 50px; margin-bottom: 40px; }
+        .big-stat { text-align: center; }
+        .big-stat-val { font-size: 64px; font-family: var(--font); color: var(--main); font-weight: 700; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+        .big-stat-label { font-size: 16px; color: var(--sub); text-transform: uppercase; letter-spacing: 1px; }
+
+        .btn-restart {
+            background: var(--main); color: var(--bg-start); border: none;
+            padding: 15px 40px; font-size: 18px; font-weight: 700;
+            border-radius: 8px; cursor: pointer; transition: 0.2s;
+            box-shadow: 0 4px 15px rgba(226, 183, 20, 0.4);
+        }
+        .btn-restart:hover { background: #fff; transform: translateY(-2px); }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* --- ДОНАТ И ТГ --- */
+        .corner-links { position: fixed; bottom: 20px; right: 20px; display: flex; gap: 10px; z-index: 100; }
+        .corner-btn {
+            width: 45px; height: 45px; border-radius: 50%;
+            background: rgba(0,0,0,0.5); border: 1px solid var(--panel-border);
+            display: flex; justify-content: center; align-items: center;
+            color: var(--sub); text-decoration: none; transition: 0.2s; backdrop-filter: blur(10px);
+        }
+        .corner-btn:hover { color: var(--main); background: rgba(255,255,255,0.1); transform: scale(1.1); }
+        .corner-btn svg { width: 22px; height: 22px; }
+
+        @media (max-width: 768px) {
+            .text-display { font-size: 22px; }
+            .settings { font-size: 12px; gap: 10px; flex-wrap: wrap; justify-content: center; padding: 10px; }
+            .header { flex-direction: column; gap: 15px; }
+            .big-stats { gap: 20px; }
+            .big-stat-val { font-size: 40px; }
+            .rick-runner { width: 70px; height: 70px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Фон с твоей фоткой -->
+    <div class="bg-image"></div>
+    <div class="bg-overlay"></div>
+    <div class="glow-bg"></div>
+    
+    <!-- Бегущий Рик -->
+    <div class="rick-runner">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <line x1="40" y1="80" x2="25" y2="95" stroke="#4a90e2" stroke-width="8" stroke-linecap="round" />
+            <line x1="60" y1="80" x2="75" y2="95" stroke="#4a90e2" stroke-width="8" stroke-linecap="round" />
+            <path d="M30 40 L70 40 L80 85 L20 85 Z" fill="#e2e8f0" />
+            <line x1="30" y1="50" x2="10" y2="60" stroke="#f8fafc" stroke-width="6" stroke-linecap="round" />
+            <rect x="5" y="50" width="8" height="15" fill="#10b981" transform="rotate(-30 5 50)" />
+            <line x1="70" y1="50" x2="85" y2="70" stroke="#f8fafc" stroke-width="6" stroke-linecap="round" />
+            <circle cx="50" cy="25" r="18" fill="#ffdbac" />
+            <path d="M32 25 Q30 5 50 5 Q70 5 68 25 Q60 15 50 15 Q40 15 32 25 Z" fill="#4a90e2" />
+            <circle cx="42" cy="22" r="4" fill="white" />
+            <circle cx="58" cy="22" r="4" fill="white" />
+            <circle cx="42" cy="22" r="1.5" fill="black" />
+            <circle cx="58" cy="22" r="1.5" fill="black" />
+            <path d="M45 32 Q50 36 55 32" stroke="black" stroke-width="2" fill="none" />
+            <circle cx="35" cy="18" r="2" fill="#00f0ff" />
+        </svg>
+    </div>
+
+    <div class="header">
+        <div class="logo">⌨️ Type<span>Speed</span></div>
+        <div class="settings">
+            <span class="setting-btn active" onclick="setLang('ru', this)">RU</span>
+            <span class="setting-btn" onclick="setLang('en', this)">EN</span>
+            <span style="color: #444;">|</span>
+            <span class="setting-btn active" onclick="setMode('time', 15, this)">15s</span>
+            <span class="setting-btn" onclick="setMode('time', 30, this)">30s</span>
+            <span class="setting-btn" onclick="setMode('time', 60, this)">60s</span>
+            <span style="color: #444;">|</span>
+            <span class="setting-btn" onclick="setMode('words', 15, this)">15 слов</span>
+            <span class="setting-btn" onclick="setMode('text', 0, this)">Текст</span>
+        </div>
+    </div>
+
+    <div class="typing-area">
+        <div class="timer-display" id="timer">00:15</div>
+        
+        <div class="stats-bar" id="stats-bar">
+            <div class="stat-item">
+                <span class="stat-label">WPM</span>
+                <span id="live-wpm">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">CPM</span>
+                <span id="live-cpm">0</span>
+            </div>
+        </div>
+
+        <div class="text-wrapper" id="text-wrapper">
+            <div class="text-display" id="text-display"></div>
+        </div>
+
+        <textarea id="hidden-input" autofocus></textarea>
+
+        <div class="results-screen" id="results-screen">
+            <div class="results-title">Тест завершен!</div>
+            <div class="big-stats">
+                <div class="big-stat">
+                    <div class="big-stat-val" id="res-wpm">0</div>
+                    <div class="big-stat-label">Слов/мин (WPM)</div>
+                </div>
+                <div class="big-stat">
+                    <div class="big-stat-val" id="res-cpm">0</div>
+                    <div class="big-stat-label">Символов/мин (CPM)</div>
+                </div>
+                <div class="big-stat">
+                    <div class="big-stat-val" id="res-acc">100%</div>
+                    <div class="big-stat-label">Точность</div>
+                </div>
+            </div>
+            <button class="btn-restart" onclick="initGame()">Заново (Tab)</button>
+        </div>
+    </div>
+
+    <div class="corner-links">
+        <a href="https://t.me/burmaldance6996" target="_blank" class="corner-btn" title="Telegram">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 1 0 24 12A12 12 0 0 0 11.944 0ZM17.65 8.154a.615.615 0 0 1 .163.055.538.538 0 0 1 .3.58c-.212 1.514-1.09 5.192-1.53 7.246-.195.923-.545 1.05-.9 1.05a3.2 3.2 0 0 1-1.6-.6c-.782-.526-1.7-1.094-2.43-1.6-1.125-.8-.5-1.25.2-1.95.15-.15 2.15-2.1 2.5-2.45.1-.1.15-.2.1-.3s-.2-.1-.3-.05L9.3 11.7c-.6.3-1.1.45-1.65.2l-1.05-.35c-.6-.2-.6-.6.15-.9l13-5c.15-.05.3-.1.45-.1Z"/></svg>
+        </a>
+        <a href="https://www.donationalerts.com/r/burmald" target="_blank" class="corner-btn" title="Donate">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </a>
+    </div>
+
+    <script>
+        // ... (Огромный словарь, который был до этого) ...
+        // Вставляю сокращенную версию, чтобы не спамить, вставь свой полный массив 1000 слов сюда!
+        const dict_ru = ["человек", "время", "дело", "жизнь", "день", "рука", "раз", "работа", "слово", "место", "лицо", "друг", "глаз", "вопрос", "дом", "сторона", "страна", "мир", "случай", "голова", "ребенок", "сила", "конец", "вид", "система", "часть", "город", "отношение", "женщина", "деньги", "земля", "машина", "вода", "отец", "проблема", "час", "право", "нога", "решение", "дверь", "образ", "история", "власть", "закон", "война", "бог", "голос", "тысяча", "книга", "возможность", "результат", "ночь", "стол", "имя", "область", "статья", "число", "компания", "народ", "жена", "группа", "развитие", "процесс", "судьба", "условие", "средство", "начало", "свет", "пора", "путь", "душа", "уровень", "форма", "связь", "минута", "улица", "вечер", "качество", "мысль", "дорога", "мать", "действие", "месяц", "государство", "язык", "любовь", "взгляд", "мама", "век", "школа", "цель", "общество", "деятельность", "организация", "президент", "комната", "порядок", "момент", "театр", "письмо", "помощь", "мера", "сон", "звук", "игра", "тело", "вывод", "картина", "центр", "ответ", "брат", "автор", "стена", "интерес", "окно", "опыт", "круг", "сестра", "счет", "план", "проект", "контроль", "смысл", "мальчик", "старуха", "выход", "сцена", "герой", "писатель", "праздник", "лето", "зима", "весна", "осень", "утро", "молоко", "хлеб", "масло", "мясо", "рыба", "яблоко", "дерево", "трава", "цветок", "лист", "небо", "звезда", "солнце", "луна", "ветер", "дождь", "снег", "огонь", "камень", "гора", "река", "море", "лес", "поле", "птица", "собака", "кошка", "лошадь", "медведь", "лиса", "заяц", "волк", "корова", "свинья", "курица", "красный", "белый", "черный", "синий", "зеленый", "желтый", "большой", "маленький", "хороший", "плохой", "новый", "старый", "молодой", "долгий", "короткий", "высокий", "низкий", "быстрый", "медленный", "горячий", "холодный", "сильный", "слабый", "легкий", "трудный", "светлый", "темный", "чистый", "грязный", "богатый", "бедный", "веселый", "грустный", "умный", "глупый", "храбрый", "трусливый", "добрый", "злой", "идти", "бежать", "лететь", "плыть", "ехать", "стоять", "сидеть", "лежать", "висеть", "смотреть", "слушать", "говорить", "молчать", "думать", "знать", "понимать", "учить", "работать", "отдыхать", "играть", "петь", "танцевать", "рисовать", "писать", "читать", "считать", "решать", "делать", "создавать", "строить", "ломать", "открывать", "закрывать", "давать", "брать", "кидать", "ловить", "терять", "находить", "помогать", "мешать", "любить", "ненавидеть", "смеяться", "плакать", "улыбаться", "грустить", "радоваться", "бояться", "надеяться", "верить", "ждать", "встречать", "провожать", "жить", "умирать", "рождаться", "расти", "стареть"];
+        const dict_en = ["time", "person", "year", "way", "day", "thing", "man", "world", "life", "hand", "part", "child", "eye", "woman", "place", "work", "week", "case", "point", "government", "company", "number", "group", "problem", "fact", "be", "have", "do", "say", "get", "make", "go", "know", "take", "see", "come", "think", "look", "want", "give", "use", "find", "tell", "ask", "work", "seem", "feel", "try", "leave", "call", "good", "new", "first", "last", "long", "great", "little", "own", "other", "old", "right", "big", "high", "different", "small", "large", "next", "early", "young", "important", "few", "public", "bad", "same", "able", "red", "blue", "green", "black", "white", "yellow", "hot", "cold", "fast", "slow", "strong", "weak", "easy", "hard", "light", "dark", "clean", "dirty", "rich", "poor", "happy", "sad", "smart", "stupid", "brave", "kind", "evil", "go", "run", "fly", "swim", "drive", "stand", "sit", "lie", "hang", "look", "listen", "speak", "silent", "think", "know", "understand", "learn", "work", "rest", "play", "sing", "dance", "draw", "write", "read", "count", "solve", "make", "create", "build", "break", "open", "close", "give", "take", "throw", "catch", "lose", "find", "help", "prevent", "love", "hate", "laugh", "cry", "smile", "sad", "rejoice", "fear", "hope", "believe", "wait", "meet", "escort", "live", "die", "born", "grow", "age"];
+
+        const texts_ru = ["Программирование — это не просто написание кода. Это искусство решения задач, создания удобных интерфейсов и автоматизации рутины. Нейросети уже пишут за нас базовые функции, но без понимания логики ты не сможешь их исправить. Учись думать, как компьютер, и тогда любые сложные проекты станут тебе по плечу.", "Хороший код должен быть читаемым. Не важно, насколько сложный алгоритм ты написал, если через месяц ты сам не поймешь, что там происходит. Используй понятные имена переменных, разбивай сложные функции на простые и не забывай про комментарии. Чистота кода — это уважение к себе и коллегам."];
+        const texts_en = ["Programming is not just about writing code. It is the art of solving problems, creating user-friendly interfaces, and automating routine tasks. Neural networks already write basic functions for us, but without understanding the logic, you won't be able to fix them. Learn to think like a computer, and any complex project will be within your reach.", "Good code must be readable. It doesn't matter how complex an algorithm you have written if, in a month, you yourself won't understand what is going on there. Use clear variable names, break complex functions into simple ones, and don't forget about comments."];
+
+        let mode = 'time'; let modeValue = 15; let lang = 'ru';
+        let currentText = ""; let timer = null; let timeLeft = 0;
+        let isPlaying = false; let isFinished = false;
+        let charIndex = 0; let correctCount = 0; let errorCount = 0; let startTime = null;
+
+        const textDisplay = document.getElementById('text-display');
+        const textWrapper = document.getElementById('text-wrapper');
+        const hiddenInput = document.getElementById('hidden-input');
+        const timerDisplay = document.getElementById('timer');
+        const statsBar = document.getElementById('stats-bar');
+        const resultsScreen = document.getElementById('results-screen');
+
+        function initGame() {
+            clearInterval(timer);
+            isPlaying = false; isFinished = false;
+            timeLeft = modeValue; charIndex = 0; correctCount = 0; errorCount = 0; startTime = null;
+            
+            resultsScreen.classList.remove('show');
+            statsBar.classList.remove('show');
+            textDisplay.style.display = 'block';
+            textWrapper.style.display = 'block';
+            textWrapper.scrollTop = 0;
+            
+            generateNewText();
+            renderText();
+            updateLiveStats(0, 0);
+            
+            timerDisplay.innerText = mode === 'time' ? `00:${modeValue.toString().padStart(2, '0')}` : `00:00`;
+            timerDisplay.classList.add('show');
+            
+            hiddenInput.value = '';
+            hiddenInput.focus();
+        }
+
+        function generateNewText() {
+            if (mode === 'text') {
+                const arr = lang === 'ru' ? texts_ru : texts_en;
+                currentText = arr[Math.floor(Math.random() * arr.length)];
+            } else {
+                const dict = lang === 'ru' ? dict_ru : dict_en;
+                let arr = [];
+                const count = mode === 'words' ? modeValue : (modeValue === 15 ? 30 : 60);
+                for (let i = 0; i < count; i++) {
+                    arr.push(dict[Math.floor(Math.random() * dict.length)]);
+                }
+                currentText = arr.join(' ');
+            }
+        }
+
+        function renderText() {
+            textDisplay.innerHTML = '';
+            const wordsArr = currentText.split(' ');
+            let globalCharIndex = 0;
+
+            wordsArr.forEach((word, wordIndex) => {
+                const wordSpan = document.createElement('span');
+                wordSpan.className = 'word';
+                word.split('').forEach(char => {
+                    const charSpan = document.createElement('span');
+                    charSpan.className = 'char';
+                    if (globalCharIndex === charIndex) charSpan.classList.add('current');
+                    charSpan.innerText = char;
+                    charSpan.dataset.index = globalCharIndex;
+                    wordSpan.appendChild(charSpan);
+                    globalCharIndex++;
+                });
+                if (wordIndex < wordsArr.length - 1) {
+                    const spaceSpan = document.createElement('span');
+                    spaceSpan.className = 'char space';
+                    if (globalCharIndex === charIndex) spaceSpan.classList.add('current');
+                    spaceSpan.innerHTML = '&nbsp;';
+                    spaceSpan.dataset.index = globalCharIndex;
+                    wordSpan.appendChild(spaceSpan);
+                    globalCharIndex++;
+                }
+                textDisplay.appendChild(wordSpan);
+            });
+            scrollToCurrentChar();
+        }
+
+        function scrollToCurrentChar() {
+            const currentEl = document.querySelector(`.char[data-index="${charIndex}"]`);
+            if (currentEl) {
+                const wrapperRect = textWrapper.getBoundingClientRect();
+                const charRect = currentEl.getBoundingClientRect();
+                if (charRect.bottom > wrapperRect.bottom - 40) {
+                    textWrapper.scrollTop += 45; 
+                }
+            }
+        }
+
+        hiddenInput.addEventListener('input', (e) => {
+            if (isFinished) return;
+            if (!isPlaying) {
+                isPlaying = true; startTime = Date.now(); statsBar.classList.add('show');
+                if (mode === 'time') { timer = setInterval(updateTimer, 1000); }
+            }
+            const typedValue = hiddenInput.value;
+            if (typedValue.length > currentText.length) {
+                hiddenInput.value = typedValue.slice(0, currentText.length);
+                return;
+            }
+            if (typedValue.length < charIndex) {
+                charIndex--;
+                const el = document.querySelector(`.char[data-index="${charIndex}"]`);
+                if (el) {
+                    el.classList.remove('correct', 'incorrect');
+                    const nextEl = document.querySelector(`.char[data-index="${charIndex + 1}"]`);
+                    if (nextEl) nextEl.classList.remove('current');
+                    el.classList.add('current');
+                }
+                return;
+            }
+            const expectedChar = currentText[charIndex];
+            const typedChar = typedValue[charIndex];
+            if (typedChar !== undefined) {
+                const el = document.querySelector(`.char[data-index="${charIndex}"]`);
+                if (el) {
+                    el.classList.remove('current');
+                    if (typedChar === expectedChar) { el.classList.add('correct'); correctCount++; }
+                    else { el.classList.add('incorrect'); errorCount++; }
+                }
+                charIndex++;
+                const nextEl = document.querySelector(`.char[data-index="${charIndex}"]`);
+                if (nextEl) nextEl.classList.add('current');
+                updateLiveStats(); scrollToCurrentChar();
+                if (charIndex >= currentText.length) finishGame();
+            }
+        });
+
+        hiddenInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') { e.preventDefault(); initGame(); }
+            if (e.key === 'Enter') e.preventDefault();
+        });
+
+        function updateTimer() {
+            timeLeft--;
+            if (timeLeft < 0) timeLeft = 0;
+            timerDisplay.innerText = `00:${timeLeft.toString().padStart(2, '0')}`;
+            if (timeLeft <= 0) finishGame();
+        }
+
+        function updateLiveStats(wpm = null, cpm = null) {
+            if (!startTime) return;
+            if (wpm === null || cpm === null) {
+                const timeElapsed = (Date.now() - startTime) / 60000;
+                const safeTime = Math.max(timeElapsed, 0.016); 
+                wpm = Math.round((correctCount / 5) / safeTime) || 0;
+                cpm = Math.round(correctCount / safeTime) || 0;
+            }
+            document.getElementById('live-wpm').innerText = wpm;
+            document.getElementById('live-cpm').innerText = cpm;
+        }
+
+        function finishGame() {
+            clearInterval(timer); isFinished = true; hiddenInput.blur();
+            const timeElapsed = startTime ? (Date.now() - startTime) / 60000 : 1;
+            const wpm = Math.round((correctCount / 5) / timeElapsed) || 0;
+            const cpm = Math.round(correctCount / timeElapsed) || 0;
+            const totalAttempts = correctCount + errorCount;
+            const accuracy = totalAttempts > 0 ? Math.round((correctCount / totalAttempts) * 100) : 100;
+            document.getElementById('res-wpm').innerText = wpm;
+            document.getElementById('res-cpm').innerText = cpm;
+            document.getElementById('res-acc').innerText = accuracy + '%';
+            textWrapper.style.display = 'none';
+            statsBar.classList.remove('show');
+            timerDisplay.classList.remove('show');
+            resultsScreen.classList.add('show');
+        }
+
+        function setMode(newMode, value, btn) {
+            mode = newMode; if (value) modeValue = value;
+            document.querySelectorAll('.settings .setting-btn').forEach(b => b.classList.remove('active'));
+            if(btn) btn.classList.add('active');
+            initGame();
+        }
+
+        function setLang(newLang, btn) {
+            lang = newLang;
+            const ruBtn = document.querySelectorAll('.settings .setting-btn')[0];
+            const enBtn = document.querySelectorAll('.settings .setting-btn')[1];
+            ruBtn.classList.remove('active'); enBtn.classList.remove('active');
+            if(btn) btn.classList.add('active');
+            initGame();
+        }
+
+        window.onload = () => {
+            initGame();
+            document.addEventListener('click', (e) => {
+                if (!isFinished && !e.target.classList.contains('corner-btn') && e.target.tagName !== 'svg') {
+                    hiddenInput.focus();
+                }
+            });
+        };
+    </script>
+</body>
+</html>
